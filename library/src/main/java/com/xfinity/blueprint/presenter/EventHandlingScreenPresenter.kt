@@ -26,3 +26,7 @@ interface EventHandlingScreenPresenter<in T : ScreenView> : ScreenPresenter<T>, 
         componentEventManager.unregisterListener(this)
     }
 }
+
+interface ParallaxScreenPresenter<in T : ScreenView> : EventHandlingScreenPresenter<T> {
+    fun onScrolled(dx: Int, dy: Int) {}
+}

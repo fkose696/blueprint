@@ -11,19 +11,16 @@
 
 package com.xfinity.blueprint_sample.mvp.presenter
 
+import com.xfinity.blueprint.architecture.DefaultScreenView
 import com.xfinity.blueprint.event.ComponentEvent
 import com.xfinity.blueprint.event.ComponentEventManager
 import com.xfinity.blueprint.model.Component
-import com.xfinity.blueprint.model.ComponentModel
-import com.xfinity.blueprint.presenter.DefaultComponentPresenter
-import com.xfinity.blueprint.presenter.EventHandlingScreenPresenter
-import com.xfinity.blueprint.architecture.DefaultScreenView
+import com.xfinity.blueprint.presenter.ParallaxScreenPresenter
 import com.xfinity.blueprint_sample.ResourceProvider
 import com.xfinity.blueprint_sample.blueprint.AppComponentRegistry
 import com.xfinity.blueprint_sample.mvp.model.DataItemModel
 import com.xfinity.blueprint_sample.mvp.model.DynamicScreenModel
 import io.reactivex.Completable
-import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.schedulers.Schedulers
 import java.util.concurrent.TimeUnit
@@ -31,15 +28,20 @@ import java.util.concurrent.TimeUnit
 
 class ArchitectSamplePresenter(override val componentEventManager: ComponentEventManager,
                                private val resourceProvider: ResourceProvider) :
-        EventHandlingScreenPresenter<DefaultScreenView> {
+        ParallaxScreenPresenter<DefaultScreenView> {
 
     var model: DynamicScreenModel = DynamicScreenModel()
     lateinit var view: DefaultScreenView
     private val dataItemPresenter: DataItemPresenter = DataItemPresenter(componentEventManager)
     private var headerPosition = 0
+    private var headerScrollBehavior: ((Int, Int) -> Unit)? = null
 
     override fun attachView(screenView: DefaultScreenView) {
         view = screenView
+    }
+
+    override fun pause() {
+        headerScrollBehavior = null
     }
 
     /**
@@ -100,12 +102,21 @@ class ArchitectSamplePresenter(override val componentEventManager: ComponentEven
         view.updateComponents(screenComponents)
     }
 
-    override fun onComponentEvent(componentEvent: ComponentEvent): Boolean {
-        if (componentEvent is DataItemPresenter.DataItemClickedEvent) {
-            view.showMessage(componentEvent.toast)
-            return true  //consume
-        }
+    override fun onScrolled(dx: Int, dy: Int) {
+        headerScrollBehavior?.invoke(dx, dy)
+    }
 
+    override fun onComponentEvent(componentEvent: ComponentEvent): Boolean {
+        when (componentEvent) {
+            is DataItemPresenter.DataItemClickedEvent -> {
+                view.showMessage(componentEvent.toast)
+                return true  //consume
+            }
+            is OnScrolledEvent -> {
+                headerScrollBehavior = componentEvent.behavior
+                return true
+            }
+        }
         return false
     }
 

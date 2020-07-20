@@ -3,7 +3,9 @@ package com.xfinity.blueprint.architecture
 import `in`.srain.cube.views.ptr.PtrClassicFrameLayout
 import android.view.View
 import androidx.appcompat.app.ActionBar
+import androidx.recyclerview.widget.RecyclerView
 import com.xfinity.blueprint.ComponentRegistry
+import com.xfinity.blueprint.presenter.ParallaxScreenPresenter
 import com.xfinity.blueprint.presenter.ScreenPresenter
 import com.xfinity.blueprint.view.ScreenViewDelegate
 
@@ -33,6 +35,14 @@ abstract class DefaultArchitect<out T : DefaultScreenView>(override val componen
         val screenView = getScreenView()
         presenter.attachView(screenView)
         recyclerView.adapter = screenView.screenViewDelegate.componentAdapter
+
+        if (presenter is ParallaxScreenPresenter) {
+            recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+                override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                    presenter.onScrolled(dx, dy)
+                }
+            }) // TODO: clear listener onDestroy
+        }
     }
 
     abstract fun getScreenView(): T
